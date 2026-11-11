@@ -1,38 +1,53 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:root {
+  --bg: #16131f;
+  --panel: #221d30;
+  --cell: #2c2640;
+  --cell-line: #3a3352;
+  --ok: #5ee1a0;
+  --bad: #ff5f7a;
+  --gold: #ffd166;
+  --txt: #f3eefc;
+  --muted: #9d93b8;
+  --gap: 3px;
+  /* Tamaño de celda responsive: ocupa todo el ancho disponible (menos
+     márgenes) dividido en 8, con un tope de 52px en pantallas grandes. */
+  --cs: min(calc((100vw - 40px - 7 * var(--gap)) / 8), 52px);
 }
 
-html, body {
-  height: 100%;
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
   margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: "Fredoka", system-ui, sans-serif;
+  overscroll-behavior: none;
 }
 
 body {
-  font-family: "Nunito", "Roboto", "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: #a34747;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Sin esto, arrastrar una pieza en mobile scrollea/hace zoom en vez de
+     mover la pieza — ver spec, "sin scroll ni zoom accidental en mobile". */
+  touch-action: none;
+  overflow: hidden;
 }
 
-@media (min-width: 900px) {
-  body {
-    background-image: linear-gradient(
-      135deg,
-      #7d6e6e 16.67%,
-      #fff 0,
-      #fff 50%,
-      #7d6e6e 0,
-      #7d6e6e 66.67%,
-      #fff 0,
-      #fff
-    );
-    background-size: 4.24px 4.24px;
-  }
+button {
+  font-family: inherit;
 }
 
 #root {
-  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }

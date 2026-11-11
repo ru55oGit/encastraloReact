@@ -1,0 +1,10 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, var(--cs));
+  gap: var(--gap);
+  padding: 8px;
+  background: var(--panel);
+  border-radius: 14px;
+  position: relative;
+  touch-action: none;
+}

@@ -1,0 +1,23 @@
+.badge {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  background: var(--gold);
+  color: #2a2238;
+  font-weight: 700;
+  font-size: 20px;
+  border-radius: 999px;
+  padding: 4px 12px;
+  transform: translate(-50%, -130%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.over {
+  background: var(--bad);
+  color: #fff;
+}
+
+.ten {
+  background: var(--ok);
+}

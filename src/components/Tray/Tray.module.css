@@ -1,0 +1,19 @@
+.tray {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  height: calc(var(--cs) * 2.4 + 20px);
+  margin-top: 16px;
+  padding: 0 8px;
+  overflow: hidden;
+}
+
+.slot {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Encastrado — POC</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#16131f; --panel:#221d30; --cell:#2c2640; --cell-line:#3a3352;
+    --ok:#5ee1a0; --bad:#ff5f7a; --gold:#ffd166; --txt:#f3eefc; --muted:#9d93b8;
+    --gap:3px;
+    --cs:min(calc((100vw - 40px - 7*var(--gap)) / 8), 52px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:'Fredoka',system-ui,sans-serif;overscroll-behavior:none}
+  body{display:flex;flex-direction:column;align-items:center;user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden}
+  header{width:100%;max-width:480px;padding:14px 18px 6px;display:flex;justify-content:space-between;align-items:center}
+  h1{margin:0;font-size:24px;letter-spacing:.5px}
+  h1 span{color:var(--gold)}
+  .stats{display:flex;gap:10px}
+  .stat{background:var(--panel);border-radius:10px;padding:4px 10px;text-align:center;min-width:62px}
+  .stat b{display:block;font-size:18px}
+  .stat small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .hint{font-size:13px;color:var(--muted);margin:2px 0 10px;text-align:center;padding:0 16px}
+  #board{display:grid;grid-template-columns:repeat(8,var(--cs));gap:var(--gap);padding:8px;background:var(--panel);border-radius:14px;position:relative}
+  .cell{width:var(--cs);height:var(--cs);border-radius:7px;background:var(--cell);box-shadow:inset 0 0 0 1px var(--cell-line);display:flex;align-items:center;justify-content:center;font-size:calc(var(--cs)*.62);line-height:1;transition:transform .12s}
+  .cell.filled{box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+  .cell.ghost-ok{background:rgba(94,225,160,.35)!important}
+  .cell.ghost-bad{background:rgba(255,95,122,.35)!important}
+  .cell.sel{outline:3px solid var(--gold);outline-offset:-3px;transform:scale(.9);filter:brightness(1.25)}
+  .cell.sel.head{outline-color:#fff}
+  .cell.filled{cursor:pointer}
+  #sum{position:fixed;z-index:70;pointer-events:none;background:var(--gold);color:#2a2238;font-weight:700;font-size:20px;border-radius:999px;padding:4px 12px;display:none;transform:translate(-50%,-130%);box-shadow:0 4px 12px rgba(0,0,0,.4)}
+  #sum.over{background:var(--bad);color:#fff}
+  #sum.ten{background:var(--ok)}
+  #toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);z-index:90;background:rgba(34,29,48,.97);border:2px solid var(--bad);color:var(--txt);font-size:22px;font-weight:700;padding:18px 26px;border-radius:16px;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #toast b{color:var(--gold)}
+  .cell.clearing{animation:pop .35s forwards}
+  @keyframes pop{40%{transform:scale(1.2);background:var(--gold)}100%{transform:scale(0);opacity:0}}
+  #tray{display:flex;justify-content:space-around;align-items:center;width:100%;max-width:480px;height:calc(var(--cs)*2.4 + 20px);margin-top:16px;padding:0 8px;overflow:hidden}
+  .slot{flex:1;display:flex;justify-content:center;align-items:center;height:100%}
+  .piece{display:grid;gap:2px;cursor:grab;animation:rise .45s cubic-bezier(.2,1.3,.4,1) both;touch-action:none}
+  .piece .pc{border-radius:5px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+  .piece.dragging-src{opacity:.2}
+  .piece.nofit{opacity:.35;filter:grayscale(1)}
+  @keyframes rise{from{transform:translateY(140%);opacity:0}to{transform:none;opacity:1}}
+  #drag{position:fixed;left:0;top:0;pointer-events:none;z-index:50;display:grid;gap:var(--gap);opacity:.92;filter:drop-shadow(0 8px 10px rgba(0,0,0,.5))}
+  #drag .pc{width:var(--cs);height:var(--cs);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:calc(var(--cs)*.62)}
+  .float{position:fixed;font-weight:700;color:var(--gold);font-size:26px;pointer-events:none;z-index:60;animation:floatUp 1s forwards;text-shadow:0 2px 6px #000}
+  @keyframes floatUp{to{transform:translateY(-60px);opacity:0}}
+  #over{position:fixed;inset:0;background:rgba(10,8,16,.82);display:none;align-items:center;justify-content:center;z-index:80}
+  #over .box{background:var(--panel);padding:26px 30px;border-radius:18px;text-align:center}
+  #over h2{margin:0 0 6px}
+  button{font-family:inherit;font-size:16px;font-weight:700;border:0;border-radius:12px;padding:10px 22px;background:var(--gold);color:#2a2238;margin-top:14px;cursor:pointer}
+  .row{display:flex;gap:8px;justify-content:center;margin-top:12px}
+  .ghostbtn{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--cell-line);font-size:13px;padding:6px 12px;margin:0}
+  .modes{display:flex;gap:8px;margin:2px 0 10px}
+  .modebtn{font-family:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:6px 16px;background:var(--panel);color:var(--muted);box-shadow:inset 0 0 0 1px var(--cell-line);cursor:pointer;margin:0}
+  .modebtn.active{background:var(--gold);color:#2a2238;box-shadow:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Encastr<span>ado</span></h1>
+  <div class="stats">
+    <div class="stat"><b id="score">0</b><small>Puntos</small></div>
+    <div class="stat"><b id="best">0</b><small>Récord</small></div>
+  </div>
+</header>
+<div class="modes">
+  <button class="modebtn" id="modeNum">🔢 Números</button>
+  <button class="modebtn" id="modeWord">🔤 Palabras</button>
+</div>
+<div class="hint" id="hint"></div>
+<div id="board"></div>
+<div id="tray"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+<div class="row"><button class="ghostbtn" id="restartBtn">Reiniciar</button></div>
+<div id="drag"></div>
+<div id="sum"></div>
+<div id="toast"></div>
+<div id="over"><div class="box"><h2>¡Se trabó!</h2><div id="overMsg"></div><div style="margin-top:8px">Puntos: <b id="finalScore">0</b></div><button id="againBtn">Jugar de nuevo</button></div></div>
+
+<script>
+const N = 8;
+const EMOJI = ['', '1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣'];
+const WEIGHTS = [0, 16,16,15,13,12,9,8,6,5]; // más bajos = más fácil combinar
+const COLORS = ['#7b6cf6','#f67ba8','#4fc3f7','#f6a04d','#5ee1a0','#c77dff'];
+const DIRS8 = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+const HINTS = {
+  numeros: 'Arrastrá las piezas a la grilla (tocá una para rotarla). Para borrar: apoyá el dedo en un número y recorré los vecinos (también en diagonal) sin soltar. Si suman <b style="color:var(--gold)">10</b>, desaparecen.',
+  palabras: 'Arrastrá las piezas a la grilla (tocá una para rotarla). Para borrar: recorré letras contiguas (también en diagonal) sin soltar. Si forman una <b style="color:var(--gold)">palabra</b>, desaparecen.'
+};
+
+// --- diccionario para la variante "Palabras" ---
+const WORDS = ["ABEJA","ABOGADO","ABUELA","ABUELO","ACEITE","ACTOR","AGUA","AGUILA","AGUJA","AIRE","AJO","ALEGRIA","ALMA","ALTO","ALTURA","ALUMNO","AMIGO","AMOR","ANCHO","ARBOL","ARDILLA","ARPA","ARROZ","ARVEJA","ASADO","AUTO","AVENIDA","AVION","AZUCAR","AZUL","BAILAR","BAILE","BAJO","BALLENA","BANANA","BANCO","BANDERA","BARCO","BARRIO","BATERIA","BEBER","BICI","BILLETE","BLANCO","BOCA","BOLSO","BOMBERO","BORDE","BOSQUE","BOTA","BOTON","BRAZO","BROMA","BRUJA","BUDIN","BUENO","BUFANDA","BUHO","CABALLO","CABEZA","CABRA","CAFE","CAMA","CAMELLO","CAMINAR","CAMINO","CAMION","CAMISA","CANCION","CANGURO","CANTAR","CANTO","CAPITAL","CARA","CARACOL","CARNE","CARTA","CARTERA","CASA","CASTOR","CEBOLLA","CEBRA","CENTRO","CEPILLO","CERDO","CEREZA","CHACAL","CHICLE","CHICO","CHOCLO","CHORIZO","CIELO","CINE","CIRCULO","CIUDAD","CLARO","COCINA","COCO","CODO","COLEGIO","COLOR","COMER","CONEJO","CORREO","CORRER","CORTO","CREAR","CREMA","CUBO","CUCHARA","CUELLO","CUENTO","CUERPO","DEBIL","DEDO","DELFIN","DEPORTE","DESTINO","DIA","DIBUJAR","DINERO","DOCTOR","DOLOR","DORMIR","DRAGON","DULCE","DURAZNO","ECO","ENANO","ERIZO","ESCUDO","ESCUELA","ESFERA","ESPALDA","ESPEJO","ESPOSA","ESPOSO","ESTADIO","ESTUDIO","EXAMEN","FAMILIA","FEO","FIDEO","FIESTA","FLAN","FLAUTA","FLOR","FOCA","FORMA","FRUTA","FUEGO","FUERTE","FUTURO","GALLETA","GALLINA","GALLO","GANSO","GARAJE","GATO","GAVIOTA","GIGANTE","GLOBO","GORRO","GRANDE","GRIS","GRITO","GUANTE","GUERRA","HALCON","HELADO","HERMANA","HERMANO","HEROE","HIENA","HIJA","HIJO","HILO","HIMNO","HOJA","HOMBRO","HORA","HORMIGA","HOTEL","HUESO","HUEVO","IGLESIA","ISLA","JABON","JAGUAR","JIRAFA","JUEGO","JUGAR","JUGO","KIWI","KOALA","LADO","LAGO","LAMPARA","LARGO","LECCION","LECHE","LECHUGA","LEER","LENTEJA","LENTO","LEON","LETRA","LIBRO","LIMON","LIMPIO","LINEA","LLANTO","LLUVIA","LOBO","LORO","LUNA","MADRE","MAESTRO","MAGO","MALETA","MALO","MANGO","MANI","MANO","MANTA","MANTECA","MANZANA","MAPA","MAR","MEDIA","MELODIA","MELON","MENSAJE","MENTE","MERCADO","MES","MESA","MIEDO","MIEL","MINUTO","MOCHILA","MONEDA","MONO","MONTE","MORADO","MOSCA","MOTO","MUERTE","MUNDO","MUSEO","MUSICA","MUSICO","NACION","NADAR","NARANJA","NARIZ","NEGRO","NIEVE","NOCHE","NOTA","NOVELA","NOVIA","NOVIO","NUBE","NUEVO","NUEZ","NUMERO","NUTRIA","OCEANO","ODIO","OJO","OLLA","OLVIDAR","OREJA","OSCURO","OSO","OVEJA","PADRE","PAIS","PALABRA","PALOMA","PAN","PANDA","PAPA","PARED","PARQUE","PASADO","PASTA","PATIO","PATO","PAVO","PAZ","PECHO","PEINE","PELO","PENSAR","PEPINO","PERA","PERRO","PESCADO","PESO","PEZ","PIANO","PIE","PIEL","PIERNA","PILOTO","PINTAR","PINTOR","PISO","PIZZA","PLANETA","PLATO","PLAYA","PLAZA","POEMA","POLICIA","POLLERA","POROTO","PRIMA","PRIMO","PUEBLO","PUENTE","PUERTA","PULPO","PUMA","PUNTA","QUESO","RADIO","RAMA","RANA","RAPIDO","RATON","RAYO","REGALO","REGION","REINA","RELOJ","REY","RICO","RIO","RISA","RITMO","RODILLA","ROJO","ROSA","RUIDO","RUMBO","SACO","SAL","SALTAR","SALUD","SANDIA","SANGRE","SARTEN","SECRETO","SEGUNDO","SEMANA","SENDERO","SIGLO","SILLA","SOFA","SOL","SOLDADO","SONIDO","SOPA","SUBTE","SUCIO","TAMBOR","TARDE","TAREA","TARJETA","TAXI","TAZA","TEATRO","TECHO","TEMPLO","TENEDOR","TENIS","TIA","TIBURON","TIEMPO","TIENDA","TIERRA","TIGRE","TIJERA","TIO","TIZA","TOALLA","TOMATE","TOPO","TORRE","TORTA","TORTUGA","TREN","TRUENO","TUNEL","TURISTA","UVA","VACA","VALLE","VASO","VECINO","VENTANA","VERANO","VERDE","VESTIDO","VIAJAR","VIAJE","VIDA","VIEJO","VIENTO","VINO","VIOLIN","VOZ","YOGUR","ZAPATO","ZORRO"];
+const WORD_SET = new Set(WORDS);
+const PREFIX_SET = (() => { const s=new Set(); for(const w of WORDS) for(let i=1;i<=w.length;i++) s.add(w.slice(0,i)); return s; })();
+const MAX_WORD_LEN = Math.max(...WORDS.map(w=>w.length));
+// las letras del tablero salen solo entre las que forman palabras, con frecuencia real del diccionario
+const LETTER_FREQ = (() => { const f={}; for(const w of WORDS) for(const ch of w) f[ch]=(f[ch]||0)+1; return f; })();
+const LETTERS = Object.keys(LETTER_FREQ);
+
+let mode = 'numeros'; // 'numeros' | 'palabras'
+
+const SHAPES = {
+  punto: [[0,0]],
+  I2:    [[0,0],[1,0]],
+  I3:    [[0,0],[1,0],[2,0]],
+  L:     [[0,0],[1,0],[2,0],[2,1]],
+  T:     [[0,0],[0,1],[0,2],[1,1]],
+  U:     [[0,0],[0,2],[1,0],[1,1],[1,2]],
+  Z:     [[0,0],[0,1],[1,1],[1,2]],
+};
+const SHAPE_POOL = ['punto','punto','I2','I3','L','L','T','U','Z','Z'];
+
+let grid, colorGrid, tray, score, best = 0;
+try { best = +localStorage.getItem('encastrado_best') || 0; } catch(e){}
+
+const boardEl = document.getElementById('board');
+const slots = [...document.querySelectorAll('.slot')];
+const dragEl = document.getElementById('drag');
+const cellEls = [];
+for (let r=0;r<N;r++){ cellEls.push([]); for(let c=0;c<N;c++){ const d=document.createElement('div'); d.className='cell'; boardEl.appendChild(d); cellEls[r].push(d);} }
+
+function randDigit(){
+  const tot = WEIGHTS.reduce((a,b)=>a+b,0); let x = Math.random()*tot;
+  for (let i=1;i<=9;i++){ x -= WEIGHTS[i]; if (x<0) return i; } return 1;
+}
+function randLetter(){
+  const tot = LETTERS.reduce((a,ch)=>a+LETTER_FREQ[ch],0); let x = Math.random()*tot;
+  for (const ch of LETTERS){ x -= LETTER_FREQ[ch]; if (x<0) return ch; } return LETTERS[0];
+}
+function randValue(){ return mode==='palabras' ? randLetter() : randDigit(); }
+function cellText(v){ if(!v) return ''; return mode==='palabras' ? v : EMOJI[v]; }
+function normalize(cells){
+  const mr=Math.min(...cells.map(c=>c.r)), mc=Math.min(...cells.map(c=>c.c));
+  return cells.map(c=>({...c, r:c.r-mr, c:c.c-mc}));
+}
+function rotate(piece){ piece.cells = normalize(piece.cells.map(x=>({r:x.c, c:-x.r, v:x.v}))); }
+function newPiece(){
+  const name = SHAPE_POOL[Math.floor(Math.random()*SHAPE_POOL.length)];
+  const p = { cells: SHAPES[name].map(([r,c])=>({r,c,v:randValue()})), color: COLORS[Math.floor(Math.random()*COLORS.length)] };
+  for (let k=Math.floor(Math.random()*4); k>0; k--) rotate(p);
+  return p;
+}
+function dims(p){ return { h:Math.max(...p.cells.map(c=>c.r))+1, w:Math.max(...p.cells.map(c=>c.c))+1 }; }
+
+function canPlace(p, R, C){
+  return p.cells.every(x=>{ const r=R+x.r, c=C+x.c; return r>=0&&r<N&&c>=0&&c<N&&!grid[r][c]; });
+}
+function fitsAnywhere(p){
+  for (let rot=0; rot<4; rot++){
+    const q = {cells:p.cells.map(x=>({...x}))}; for(let k=0;k<rot;k++) rotate(q);
+    for (let r=0;r<N;r++) for(let c=0;c<N;c++) if(canPlace(q,r,c)) return true;
+  }
+  return false;
+}
+
+// ¿Existe algún recorrido de casillas contiguas que sume 10?
+function anyPathOf10(){
+  const seen=new Set();
+  const dfs=(r,c,sum,len)=>{
+    if(sum===10) return len>=2;
+    for(const [dr,dc] of DIRS8){
+      const nr=r+dr,nc=c+dc,k=nr*N+nc;
+      if(nr<0||nr>=N||nc<0||nc>=N||!grid[nr][nc]||seen.has(k)||sum+grid[nr][nc]>10) continue;
+      seen.add(k); const ok=dfs(nr,nc,sum+grid[nr][nc],len+1); seen.delete(k); if(ok) return true;
+    }
+    return false;
+  };
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(grid[r][c]){ seen.add(r*N+c); const ok=dfs(r,c,grid[r][c],1); seen.delete(r*N+c); if(ok) return true; }
+  return false;
+}
+// ¿Existe algún recorrido de letras contiguas que forme una palabra del diccionario?
+function anyWordPath(){
+  const seen=new Set();
+  const dfs=(r,c,str)=>{
+    if(str.length>=3 && WORD_SET.has(str)) return true;
+    if(str.length>=MAX_WORD_LEN) return false;
+    for(const [dr,dc] of DIRS8){
+      const nr=r+dr,nc=c+dc,k=nr*N+nc;
+      if(nr<0||nr>=N||nc<0||nc>=N||!grid[nr][nc]||seen.has(k)) continue;
+      const ns=str+grid[nr][nc]; if(!PREFIX_SET.has(ns)) continue;
+      seen.add(k); const ok=dfs(nr,nc,ns); seen.delete(k); if(ok) return true;
+    }
+    return false;
+  };
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(grid[r][c]){ seen.add(r*N+c); const ok=dfs(r,c,grid[r][c]); seen.delete(r*N+c); if(ok) return true; }
+  return false;
+}
+function anyClearPathExists(){ return mode==='palabras' ? anyWordPath() : anyPathOf10(); }
+
+function render(){
+  for (let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const el=cellEls[r][c]; el.className='cell'+(grid[r][c]?' filled':'');
+    el.textContent = cellText(grid[r][c]); el.style.background = grid[r][c]?colorGrid[r][c]:'';
+  }
+  document.getElementById('score').textContent=score;
+  document.getElementById('best').textContent=best;
+}
+function renderTray(animateIdx){
+  slots.forEach((s,i)=>{
+    s.innerHTML='';
+    const p=tray[i]; if(!p) return;
+    const {h,w}=dims(p);
+    const size = Math.min(26, Math.floor((window.innerWidth/3 - 24)/Math.max(w,3)));
+    const el=document.createElement('div'); el.className='piece';
+    el.style.gridTemplateColumns=`repeat(${w},${size}px)`; el.style.gridTemplateRows=`repeat(${h},${size}px)`;
+    if (animateIdx===undefined || !animateIdx.includes(i)) el.style.animation='none';
+    else el.style.animationDelay=(i*0.08)+'s';
+    p.cells.forEach(x=>{ const d=document.createElement('div'); d.className='pc'; d.style.gridRow=x.r+1; d.style.gridColumn=x.c+1;
+      d.style.width=d.style.height=size+'px'; d.style.fontSize=(size*.72)+'px'; d.style.background=p.color; d.textContent=cellText(x.v); el.appendChild(d); });
+    if (!fitsAnywhere(p)) el.classList.add('nofit');
+    el.addEventListener('pointerdown', e=>startDrag(e,i,el));
+    s.appendChild(el);
+  });
+}
+
+// ---------- drag & drop ----------
+let drag=null;
+function metrics(){ const a=cellEls[0][0].getBoundingClientRect(), b=cellEls[0][1].getBoundingClientRect(); return {x0:a.left,y0:a.top,pitch:b.left-a.left,cs:a.width}; }
+function startDrag(e,i,el){
+  e.preventDefault();
+  const p=tray[i]; const {h,w}=dims(p); const m=metrics();
+  dragEl.innerHTML=''; dragEl.style.gridTemplateColumns=`repeat(${w},${m.cs}px)`; dragEl.style.gridTemplateRows=`repeat(${h},${m.cs}px)`;
+  p.cells.forEach(x=>{ const d=document.createElement('div'); d.className='pc'; d.style.gridRow=x.r+1; d.style.gridColumn=x.c+1; d.style.background=p.color; d.textContent=cellText(x.v); dragEl.appendChild(d); });
+  drag={i,el,p,w,h,m,sx:e.clientX,sy:e.clientY,moved:false,target:null,lift:e.pointerType==='mouse'?20:70};
+  dragEl.style.display='none';
+  window.addEventListener('pointermove',onMove); window.addEventListener('pointerup',onUp); window.addEventListener('pointercancel',onUp);
+}
+function onMove(e){
+  if(!drag) return;
+  if(!drag.moved && Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<8) return;
+  if(!drag.moved){ drag.moved=true; drag.el.classList.add('dragging-src'); dragEl.style.display='grid'; }
+  const {m,w,h}=drag; const pw=w*m.pitch, ph=h*m.pitch;
+  const left=e.clientX-pw/2, top=e.clientY-ph-drag.lift;
+  dragEl.style.transform=`translate(${left}px,${top}px)`;
+  const C=Math.round((left-m.x0)/m.pitch), R=Math.round((top-m.y0)/m.pitch);
+  clearGhost();
+  const touchesBoard = drag.p.cells.some(x=>{const r=R+x.r,c=C+x.c;return r>=0&&r<N&&c>=0&&c<N;});
+  if(!touchesBoard){ drag.target=null; return; }
+  const ok=canPlace(drag.p,R,C); drag.target=ok?[R,C]:null;
+  drag.p.cells.forEach(x=>{const r=R+x.r,c=C+x.c; if(r>=0&&r<N&&c>=0&&c<N) cellEls[r][c].classList.add(ok?'ghost-ok':'ghost-bad');});
+}
+function clearGhost(){ for(const row of cellEls) for(const el of row) el.classList.remove('ghost-ok','ghost-bad'); }
+function onUp(){
+  window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); window.removeEventListener('pointercancel',onUp);
+  if(!drag) return; const d=drag; drag=null; dragEl.style.display='none'; clearGhost(); d.el.classList.remove('dragging-src');
+  if(!d.moved){ rotate(tray[d.i]); renderTray(); return; } // tap = rotar
+  if(d.target) place(d.i,...d.target);
+}
+
+function place(i,R,C){
+  const p=tray[i];
+  p.cells.forEach(x=>{ grid[R+x.r][C+x.c]=x.v; colorGrid[R+x.r][C+x.c]=p.color; });
+  score+=p.cells.length; tray[i]=null;
+  afterMove();
+}
+
+// ---------- selección por recorrido ----------
+let path=null;
+const sumEl=document.getElementById('sum'), toastEl=document.getElementById('toast');
+function cellAt(x,y,strict){
+  const m=metrics(); const fx=(x-m.x0)/m.pitch, fy=(y-m.y0)/m.pitch;
+  const c=Math.floor(fx), r=Math.floor(fy);
+  if(r<0||r>=N||c<0||c>=N) return null;
+  if(strict){ const dx=fx-c-.5, dy=fy-r-.5; if(Math.abs(dx)>.36||Math.abs(dy)>.36) return null; } // zona central: evita tomar casillas por rozar esquinas
+  return [r,c];
+}
+function drawPath(x,y){
+  for(const row of cellEls) for(const el of row) el.classList.remove('sel','head');
+  path.forEach(([r,c],i)=>{ cellEls[r][c].classList.add('sel'); if(i===path.length-1) cellEls[r][c].classList.add('head'); });
+  if(mode==='palabras'){
+    const word=path.map(([r,c])=>grid[r][c]).join('');
+    sumEl.textContent=word; sumEl.className=(word.length>=3&&WORD_SET.has(word))?'ten':'';
+  } else {
+    const s=path.reduce((a,[r,c])=>a+grid[r][c],0);
+    sumEl.textContent='Σ '+s; sumEl.className=s===10?'ten':s>10?'over':'';
+  }
+  sumEl.style.display='block'; sumEl.style.left=x+'px'; sumEl.style.top=y+'px';
+}
+boardEl.addEventListener('pointerdown',e=>{
+  if(drag) return;
+  const hit=cellAt(e.clientX,e.clientY,false); if(!hit||!grid[hit[0]][hit[1]]) return;
+  e.preventDefault(); path=[hit]; drawPath(e.clientX,e.clientY);
+  window.addEventListener('pointermove',onPathMove); window.addEventListener('pointerup',onPathUp); window.addEventListener('pointercancel',onPathUp);
+});
+function onPathMove(e){
+  if(!path) return;
+  const hit=cellAt(e.clientX,e.clientY,true);
+  if(hit){
+    const [r,c]=hit, last=path[path.length-1], prev=path[path.length-2];
+    if(prev&&prev[0]===r&&prev[1]===c) path.pop(); // volver atrás deshace
+    else if(grid[r][c] && Math.max(Math.abs(r-last[0]),Math.abs(c-last[1]))===1 && !path.some(p=>p[0]===r&&p[1]===c)) path.push(hit);
+  }
+  drawPath(e.clientX,e.clientY);
+}
+function onPathUp(){
+  window.removeEventListener('pointermove',onPathMove); window.removeEventListener('pointerup',onPathUp); window.removeEventListener('pointercancel',onPathUp);
+  if(!path) return; const p=path; path=null;
+  for(const row of cellEls) for(const el of row) el.classList.remove('sel','head');
+  sumEl.style.display='none';
+  let ok, label;
+  if(mode==='palabras'){
+    const word=p.map(([r,c])=>grid[r][c]).join('');
+    ok = word.length>=3 && WORD_SET.has(word);
+    label = ok ? null : `<b>${word}</b> no es una palabra`;
+    if(ok) var pts=word.length*10+(word.length-3)*5, floatLabel='+'+pts+' '+word;
+  } else {
+    const s=p.reduce((a,[r,c])=>a+grid[r][c],0);
+    ok = s===10 && p.length>=2;
+    label = ok ? null : `Sumaste <b>${s}</b>. ¡Tienen que sumar <b>10</b>!`;
+    if(ok) var pts=p.length*10+(p.length-2)*5, floatLabel='+'+pts;
+  }
+  if(ok){
+    score+=pts; let sx=0,sy=0;
+    p.forEach(([r,c])=>{const el=cellEls[r][c]; el.classList.add('clearing'); const rc=el.getBoundingClientRect(); sx+=rc.left; sy+=rc.top;});
+    floatText(floatLabel,sx/p.length,sy/p.length);
+    setTimeout(()=>{ p.forEach(([r,c])=>{grid[r][c]=0;}); afterMove(); },360);
+  } else {
+    showToast(label);
+  }
+}
+let toastT;
+function showToast(html){ toastEl.innerHTML=html; toastEl.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove('show'),3000); }
+
+function bestKey(){ return 'encastrado_best_'+mode; }
+function afterMove(){
+  if(score>best){ best=score; try{localStorage.setItem(bestKey(),best);}catch(e){} }
+  let anim;
+  if(tray.every(p=>!p)){ tray=[newPiece(),newPiece(),newPiece()]; anim=[0,1,2]; }
+  render(); renderTray(anim);
+  if(tray.filter(Boolean).every(p=>!fitsAnywhere(p)) && !anyClearPathExists()) setTimeout(gameOver,400);
+}
+function floatText(t,x,y){ const f=document.createElement('div'); f.className='float'; f.textContent=t; f.style.left=x+'px'; f.style.top=y+'px'; document.body.appendChild(f); setTimeout(()=>f.remove(),1000); }
+function gameOver(){
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('overMsg').textContent = mode==='palabras'
+    ? 'No entra ninguna pieza y no queda ninguna palabra posible.'
+    : 'No entra ninguna pieza y no queda ningún camino que sume 10.';
+  document.getElementById('over').style.display='flex';
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('modeNum').classList.toggle('active', m==='numeros');
+  document.getElementById('modeWord').classList.toggle('active', m==='palabras');
+  document.getElementById('hint').innerHTML = HINTS[m];
+  try{ best = +localStorage.getItem(bestKey()) || 0; }catch(e){ best = 0; }
+  start();
+}
+function start(){
+  grid=[...Array(N)].map(()=>Array(N).fill(0)); colorGrid=[...Array(N)].map(()=>Array(N).fill(''));
+  score=0; tray=[newPiece(),newPiece(),newPiece()];
+  document.getElementById('over').style.display='none';
+  render(); renderTray([0,1,2]);
+}
+document.getElementById('againBtn').onclick=start;
+document.getElementById('restartBtn').onclick=start;
+document.getElementById('modeNum').onclick=()=>setMode('numeros');
+document.getElementById('modeWord').onclick=()=>setMode('palabras');
+window.addEventListener('resize',()=>renderTray());
+setMode('numeros');
+</script>
+</body>
+</html>

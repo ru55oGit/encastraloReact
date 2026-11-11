@@ -1,0 +1,43 @@
+.header {
+  width: 100%;
+  max-width: 480px;
+  padding: 14px 18px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 0.5px;
+}
+
+.gold {
+  color: var(--gold);
+}
+
+.stats {
+  display: flex;
+  gap: 10px;
+}
+
+.stat {
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 4px 10px;
+  text-align: center;
+  min-width: 62px;
+}
+
+.stat b {
+  display: block;
+  font-size: 18px;
+}
+
+.stat small {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
