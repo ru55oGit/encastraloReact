@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyGrid } from "../../board";
-import { anyWordPath, wordsVariant } from "./words";
+import { getWordsVariant } from "./words";
+
+const wordsVariant = getWordsVariant("es");
+const anyWordPath = wordsVariant.anyClearPathExists;
 
 function gridWithLetters(letters: Record<string, string>) {
   const grid = createEmptyGrid();

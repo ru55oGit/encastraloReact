@@ -1,53 +1,54 @@
+/* Variables del tablero de Encastralo — paleta del hub (no la paleta
+   oscura del POC original), usadas por los CSS Modules de src/components/
+   {Board,Cell,Tray,TrayPiece,DragLayer,PathBadge,Toast,FloatingText}. */
 :root {
-  --bg: #16131f;
-  --panel: #221d30;
-  --cell: #2c2640;
-  --cell-line: #3a3352;
-  --ok: #5ee1a0;
-  --bad: #ff5f7a;
-  --gold: #ffd166;
-  --txt: #f3eefc;
-  --muted: #9d93b8;
+  --panel: #fff;
+  --cell: #f3f3f3;
+  --cell-line: #e0e0e0;
+  --ok: #22c55e;
+  --bad: #e74c3c;
+  --gold: #f0b429;
+  --txt: #222;
+  --muted: #888;
   --gap: 3px;
-  /* Tamaño de celda responsive: ocupa todo el ancho disponible (menos
-     márgenes) dividido en 8, con un tope de 52px en pantallas grandes. */
-  --cs: min(calc((100vw - 40px - 7 * var(--gap)) / 8), 52px);
+  --cs: min(calc((100vw - 56px - 7 * var(--gap)) / 8), 52px);
 }
 
 * {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html,
-body {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
   height: 100%;
-  background: var(--bg);
-  color: var(--txt);
-  font-family: "Fredoka", system-ui, sans-serif;
-  overscroll-behavior: none;
+  margin: 0;
 }
 
 body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  user-select: none;
-  -webkit-user-select: none;
-  /* Sin esto, arrastrar una pieza en mobile scrollea/hace zoom en vez de
-     mover la pieza — ver spec, "sin scroll ni zoom accidental en mobile". */
-  touch-action: none;
-  overflow: hidden;
+  font-family: "Nunito", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #a34747;
+  min-height: 100vh;
 }
 
-button {
-  font-family: inherit;
+@media (min-width: 900px) {
+  body {
+    background-image: linear-gradient(
+      135deg,
+      #7d6e6e 16.67%,
+      #fff 0,
+      #fff 50%,
+      #7d6e6e 0,
+      #7d6e6e 66.67%,
+      #fff 0,
+      #fff
+    );
+    background-size: 4.24px 4.24px;
+  }
 }
 
 #root {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  min-height: 100vh;
 }

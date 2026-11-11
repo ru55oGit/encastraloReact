@@ -1,4 +1,4 @@
-export type Variant = "numbers" | "words";
+export type Variant = "numbers" | "words" | "fruits";
 
 export type ShapeName = "punto" | "I2" | "I3" | "L" | "T" | "U" | "Z";
 
@@ -74,5 +74,4 @@ export type GameAction =
   | { type: "PLACE_PIECE"; trayIndex: number; at: GridPos }
   | { type: "ROTATE_PIECE"; trayIndex: number }
   | { type: "CLEAR_PATH"; path: Path; points: number }
-  | { type: "SET_VARIANT"; variant: Variant }
   | { type: "RESTART" };

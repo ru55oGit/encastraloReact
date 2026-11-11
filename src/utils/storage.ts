@@ -1,6 +1,6 @@
 import { Variant } from "../game/types";
 
-const KEY_PREFIX = "encastrado_best";
+const KEY_PREFIX = "encastralo_best";
 
 function keyFor(variant: Variant): string {
   return `${KEY_PREFIX}_${variant}`;

@@ -1,11 +1,11 @@
-# Encastrado
+# Encastralo
 
 Juego web mobile-first: encastrá piezas en una grilla de 8x8 y borrá
 recorridos de casillas contiguas (8 direcciones) — en la variante
 **Números**, que sumen 10; en la variante **Palabras**, que formen una
 palabra del diccionario.
 
-Mecánica y look tomados de `referencia/encastrado-poc.html` (un solo HTML
+Mecánica y look tomados de `referencia/encastralo-poc.html` (un solo HTML
 de prueba) y reescritos en React + TypeScript + Vite, sin librerías de UI
 ni de drag & drop — todo con pointer events nativos.
 
@@ -61,7 +61,7 @@ etc.), convertirlo a este array de un solo lugar es el único paso extra.
 
 ## Estado pendiente / próximos pasos
 
-- El dominio final (`encastrado.com`) y la cuenta de Google Ads/GA4 todavía
+- El dominio final (`encastralo.com`) y la cuenta de Google Ads/GA4 todavía
   no existen — `index.html` tiene marcas `TODO` donde va esa información
   real una vez que se decida.
 - El favicon es un placeholder genérico (letra "E" sobre el fondo oscuro

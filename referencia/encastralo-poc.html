@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Encastrado — POC</title>
+<title>Encastralo — POC</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -116,7 +116,7 @@ const SHAPES = {
 const SHAPE_POOL = ['punto','punto','I2','I3','L','L','T','U','Z','Z'];
 
 let grid, colorGrid, tray, score, best = 0;
-try { best = +localStorage.getItem('encastrado_best') || 0; } catch(e){}
+try { best = +localStorage.getItem('encastralo_best') || 0; } catch(e){}
 
 const boardEl = document.getElementById('board');
 const slots = [...document.querySelectorAll('.slot')];
@@ -326,7 +326,7 @@ function onPathUp(){
 let toastT;
 function showToast(html){ toastEl.innerHTML=html; toastEl.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove('show'),3000); }
 
-function bestKey(){ return 'encastrado_best_'+mode; }
+function bestKey(){ return 'encastralo_best_'+mode; }
 function afterMove(){
   if(score>best){ best=score; try{localStorage.setItem(bestKey(),best);}catch(e){} }
   let anim;

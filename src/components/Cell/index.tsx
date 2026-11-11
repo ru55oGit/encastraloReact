@@ -10,9 +10,14 @@ interface CellProps {
   selected: boolean;
   isHead: boolean;
   clearing: boolean;
+  // Paleta de Letris (ver LETRIS_PALETTE en game/constants.ts), solo para
+  // la variante "words" — cuando vienen seteados reemplazan el color de
+  // pieza y la clase .selected/.head de este cell puntual (ver Board).
+  flatBackground?: string;
+  flatTextColor?: string;
 }
 
-export default function Cell({ r, c, label, color, filled, ghost, selected, isHead, clearing }: CellProps) {
+export default function Cell({ r, c, label, color, filled, ghost, selected, isHead, clearing, flatBackground, flatTextColor }: CellProps) {
   const classNames = [
     styles.cell,
     filled && styles.filled,
@@ -30,7 +35,10 @@ export default function Cell({ r, c, label, color, filled, ghost, selected, isHe
       className={classNames}
       data-row={r}
       data-col={c}
-      style={{ background: ghost ? undefined : (color ?? undefined) }}
+      style={{
+        background: ghost ? undefined : (flatBackground ?? color ?? undefined),
+        color: flatTextColor,
+      }}
     >
       {label}
     </div>

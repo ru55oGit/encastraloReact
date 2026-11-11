@@ -2,21 +2,40 @@ import { useCallback, useReducer } from "react";
 import { clearCells, createEmptyColorGrid, createEmptyGrid, fitsAnywhere, place } from "../game/board";
 import { TRAY_SIZE } from "../game/constants";
 import { createRandomPiece, rotatePiece } from "../game/pieces";
-import { GameAction, GameState, GridPos, Path, Piece, Variant } from "../game/types";
-import { getVariantEngine } from "../game/variants";
+import { ColorGrid, GameAction, GameState, Grid, GridPos, Path, Piece, Variant, VariantEngine } from "../game/types";
 import { getBest, setBest } from "../utils/storage";
 
-function freshTray(variant: Variant): (Piece | null)[] {
-  const engine = getVariantEngine(variant);
+function freshTray(engine: VariantEngine): (Piece | null)[] {
   return Array.from({ length: TRAY_SIZE }, () => createRandomPiece(engine.randomValue));
 }
 
-function initGameState(variant: Variant): GameState {
+// Lo mínimo para retomar una partida en curso (ver utils/inProgressGameState.ts)
+// — useGame no necesita saber nada de foundWords/numberFloor/fruitFloor,
+// eso vive aparte en game.tsx.
+export interface ResumeSnapshot {
+  grid: Grid;
+  colorGrid: ColorGrid;
+  tray: (Piece | null)[];
+  score: number;
+}
+
+function initGameState(variant: Variant, engine: VariantEngine, resumeFrom?: ResumeSnapshot): GameState {
+  if (resumeFrom) {
+    return {
+      variant,
+      grid: resumeFrom.grid,
+      colorGrid: resumeFrom.colorGrid,
+      tray: resumeFrom.tray,
+      score: resumeFrom.score,
+      best: getBest(variant),
+      phase: "playing",
+    };
+  }
   return {
     variant,
     grid: createEmptyGrid(),
     colorGrid: createEmptyColorGrid(),
-    tray: freshTray(variant),
+    tray: freshTray(engine),
     score: 0,
     best: getBest(variant),
     phase: "playing",
@@ -26,10 +45,10 @@ function initGameState(variant: Variant): GameState {
 // Se corre después de cualquier movimiento que cambia el tablero (poner
 // una pieza, o borrar un camino): guarda récord si corresponde, rellena la
 // bandeja si las 3 piezas ya se usaron, y decide si el juego terminó.
-function finishMove(state: GameState): GameState {
+function finishMove(state: GameState, engine: VariantEngine): GameState {
   let tray = state.tray;
   if (tray.every((piece) => piece === null)) {
-    tray = freshTray(state.variant);
+    tray = freshTray(engine);
   }
 
   let best = state.best;
@@ -38,7 +57,6 @@ function finishMove(state: GameState): GameState {
     setBest(state.variant, best);
   }
 
-  const engine = getVariantEngine(state.variant);
   const noPieceFits = tray.every((piece) => piece === null || !fitsAnywhere(state.grid, piece));
   const noPathExists = !engine.anyClearPathExists(state.grid);
   const phase = noPieceFits && noPathExists ? "gameover" : "playing";
@@ -46,7 +64,7 @@ function finishMove(state: GameState): GameState {
   return { ...state, tray, best, phase };
 }
 
-function reducer(state: GameState, action: GameAction): GameState {
+function reducer(state: GameState, action: GameAction, engine: VariantEngine): GameState {
   switch (action.type) {
     case "PLACE_PIECE": {
       if (state.phase !== "playing") return state;
@@ -56,7 +74,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       const tray = [...state.tray];
       tray[action.trayIndex] = null;
       const score = state.score + piece.cells.length;
-      return finishMove({ ...state, grid, colorGrid, tray, score });
+      return finishMove({ ...state, grid, colorGrid, tray, score }, engine);
     }
 
     case "ROTATE_PIECE": {
@@ -72,22 +90,28 @@ function reducer(state: GameState, action: GameAction): GameState {
       if (state.phase !== "playing") return state;
       const { grid, colorGrid } = clearCells(state.grid, state.colorGrid, action.path);
       const score = state.score + action.points;
-      return finishMove({ ...state, grid, colorGrid, score });
+      return finishMove({ ...state, grid, colorGrid, score }, engine);
     }
 
-    case "SET_VARIANT":
-      return initGameState(action.variant);
-
     case "RESTART":
-      return initGameState(state.variant);
+      return initGameState(state.variant, engine);
 
     default:
       return state;
   }
 }
 
-export function useGame(initialVariant: Variant) {
-  const [state, dispatch] = useReducer(reducer, initialVariant, initGameState);
+// `engine` ya resuelto por el caller (ver resolveVariantEngine en
+// game/variants/index.ts) — este hook no sabe ni le importa si palabras
+// cargó su diccionario vía import() dinámico, solo lo usa. `resumeFrom`
+// (si viene) solo se usa para el estado INICIAL — un RESTART posterior
+// siempre arranca una partida 100% nueva, nunca vuelve a resumir.
+export function useGame(variant: Variant, engine: VariantEngine, resumeFrom?: ResumeSnapshot) {
+  const [state, dispatch] = useReducer(
+    (s: GameState, action: GameAction) => reducer(s, action, engine),
+    variant,
+    (v) => initGameState(v, engine, resumeFrom),
+  );
 
   const placePiece = useCallback((trayIndex: number, at: GridPos) => {
     dispatch({ type: "PLACE_PIECE", trayIndex, at });
@@ -101,21 +125,9 @@ export function useGame(initialVariant: Variant) {
     dispatch({ type: "CLEAR_PATH", path, points });
   }, []);
 
-  const setVariant = useCallback((variant: Variant) => {
-    dispatch({ type: "SET_VARIANT", variant });
-  }, []);
-
   const restart = useCallback(() => {
     dispatch({ type: "RESTART" });
   }, []);
 
-  return {
-    state,
-    engine: getVariantEngine(state.variant),
-    placePiece,
-    rotateTrayPiece,
-    clearPath,
-    setVariant,
-    restart,
-  };
+  return { state, placePiece, rotateTrayPiece, clearPath, restart };
 }

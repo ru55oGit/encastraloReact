@@ -1,35 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { buildLetterFrequency, buildPrefixSet, buildWordSet, maxWordLength } from "./dictionaryIndex";
+import { buildLetterFrequency, buildPrefixTrie } from "./dictionaryIndex";
 
 const SAMPLE = ["SOL", "SOFA", "SOPA"];
 
-describe("buildWordSet", () => {
-  it("contiene exactamente las palabras del diccionario", () => {
-    const set = buildWordSet(SAMPLE);
-    expect(set.has("SOL")).toBe(true);
-    expect(set.has("SO")).toBe(false);
-    expect(set.size).toBe(3);
-  });
-});
-
-describe("buildPrefixSet", () => {
-  it("contiene todos los prefijos de cada palabra, incluida la palabra entera", () => {
-    const set = buildPrefixSet(["SOL"]);
-    expect([...set].sort()).toEqual(["S", "SO", "SOL"]);
+describe("buildPrefixTrie", () => {
+  it("reconoce todos los prefijos de cada palabra, incluida la palabra entera", () => {
+    const trie = buildPrefixTrie(["SOL"]);
+    expect(trie.hasPrefix("S")).toBe(true);
+    expect(trie.hasPrefix("SO")).toBe(true);
+    expect(trie.hasPrefix("SOL")).toBe(true);
   });
 
-  it("no duplica prefijos compartidos entre varias palabras", () => {
-    const set = buildPrefixSet(SAMPLE);
-    // "S", "SO" son prefijo de las 3 — el Set los guarda una sola vez.
-    expect(set.has("S")).toBe(true);
-    expect(set.has("SO")).toBe(true);
-    expect(set.has("SOL")).toBe(true);
-    expect(set.has("SOF")).toBe(true);
-    expect(set.has("SOFA")).toBe(true);
-    expect(set.has("SOP")).toBe(true);
-    expect(set.has("SOPA")).toBe(true);
-    // Algo que no es prefijo de ninguna no debería estar.
-    expect(set.has("X")).toBe(false);
+  it("comparte prefijos entre varias palabras sin duplicarlos", () => {
+    const trie = buildPrefixTrie(SAMPLE);
+    expect(trie.hasPrefix("S")).toBe(true);
+    expect(trie.hasPrefix("SO")).toBe(true);
+    expect(trie.hasPrefix("SOF")).toBe(true);
+    expect(trie.hasPrefix("SOFA")).toBe(true);
+    expect(trie.hasPrefix("SOP")).toBe(true);
+    expect(trie.hasPrefix("SOPA")).toBe(true);
+  });
+
+  it("devuelve false para algo que no es prefijo de ninguna palabra", () => {
+    const trie = buildPrefixTrie(SAMPLE);
+    expect(trie.hasPrefix("X")).toBe(false);
+    expect(trie.hasPrefix("SOLX")).toBe(false);
   });
 });
 
@@ -43,11 +38,5 @@ describe("buildLetterFrequency", () => {
     expect(freq.F).toBe(1);
     expect(freq.A).toBe(1);
     expect(freq.Z).toBeUndefined();
-  });
-});
-
-describe("maxWordLength", () => {
-  it("devuelve el largo de la palabra más larga", () => {
-    expect(maxWordLength(["SOL", "SOFA", "SOPA"])).toBe(4);
   });
 });
