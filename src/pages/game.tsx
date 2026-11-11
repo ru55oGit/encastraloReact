@@ -56,8 +56,10 @@ export default function Game() {
   const [initialVariant] = useState(() => parseVariant(searchParams.get("variant")));
   const [engine, setEngine] = useState<VariantEngine | null>(null);
   // Lectura síncrona (localStorage) — si hay una partida sin terminar de
-  // esta variante, se retoma en vez de arrancar una nueva.
-  const [savedGame] = useState(() => loadInProgressGame(initialVariant));
+  // esta variante Y este idioma, se retoma en vez de arrancar una nueva.
+  // Cambiar de idioma no debe resumir una partida vieja en otro idioma
+  // (en "words" la grilla tendría letras de un diccionario distinto).
+  const [savedGame] = useState(() => loadInProgressGame(initialVariant, currentLanguage));
 
   // La variante "words" carga su diccionario (ver game/variants/index.ts)
   // vía import() dinámico — las otras dos resuelven en el mismo tick, pero
@@ -137,10 +139,10 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
   // termina (no tiene sentido "retomar" una partida ya perdida).
   useEffect(() => {
     if (state.phase === "gameover") {
-      clearInProgressGame(state.variant);
+      clearInProgressGame(state.variant, currentLanguage);
       return;
     }
-    saveInProgressGame(state.variant, {
+    saveInProgressGame(state.variant, currentLanguage, {
       grid: state.grid,
       colorGrid: state.colorGrid,
       tray: state.tray,
@@ -149,7 +151,7 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
       numberFloor,
       fruitFloor,
     });
-  }, [state.phase, state.variant, state.grid, state.colorGrid, state.tray, state.score, foundWords, numberFloor, fruitFloor]);
+  }, [state.phase, state.variant, state.grid, state.colorGrid, state.tray, state.score, foundWords, numberFloor, fruitFloor, currentLanguage]);
 
   const initialBestRef = useRef(state.best);
   const gameStartedAtRef = useRef(Date.now());

@@ -72,9 +72,14 @@ const BUILDERS: Record<Variant, () => Map<string, PreviewCell>> = {
 
 interface CategoryPreviewProps {
   variant: Variant;
+  // Tamaño fijo en px (ancho = alto) en vez de aspectRatio: con filas
+  // `1fr` dentro de un grid, aspect-ratio puede quedar sin resolver en
+  // algunos navegadores (el grid termina alto según el contenido de cada
+  // fila en vez de cuadrado) — un tamaño explícito no tiene ese problema.
+  size?: number;
 }
 
-export default function CategoryPreview({ variant }: CategoryPreviewProps) {
+export default function CategoryPreview({ variant, size = 80 }: CategoryPreviewProps) {
   const cells = BUILDERS[variant]();
 
   return (
@@ -84,8 +89,8 @@ export default function CategoryPreview({ variant }: CategoryPreviewProps) {
         gridTemplateColumns: `repeat(${COLS}, 1fr)`,
         gridTemplateRows: `repeat(${ROWS}, 1fr)`,
         gap: "2px",
-        width: "100%",
-        aspectRatio: `${COLS} / ${ROWS}`,
+        width: size,
+        height: size,
       }}
     >
       {Array.from({ length: ROWS }, (_, row) =>

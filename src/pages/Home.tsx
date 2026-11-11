@@ -16,7 +16,6 @@ import ShareButtons from "../ads/ShareButtons";
 import { useLanguage } from "../i18n/LanguageContext";
 import { track } from "../lib/analytics";
 import { getDaysSinceLastPlayed } from "../utils/lastPlayedState";
-import { getBest } from "../utils/storage";
 import { buildEncastraloRecordPngFile } from "../utils/shareImage";
 import { getWordsRecord, WordsRecord } from "../utils/wordsRecordState";
 import { Variant } from "../game/types";
@@ -75,22 +74,13 @@ export default function Home() {
     }
   };
 
-  // Un best por variante (ver utils/storage.ts) para la caption de cada
-  // card de categoría, más el récord completo de palabras (puntaje +
-  // palabras encontradas + más larga) para la card grande de "Récord" —
-  // palabras es el juego principal, así que es la que se destaca ahí.
-  const [bestByVariant, setBestByVariant] = useState<Record<Variant, number> | null>(null);
+  // Récord completo de palabras (puntaje + palabras encontradas + más
+  // larga) para la card grande de "Récord" — palabras es el juego
+  // principal, así que es la que se destaca ahí.
   const [wordsRecord, setWordsRecord] = useState<WordsRecord | null>(null);
 
   useEffect(() => {
-    const refresh = () => {
-      setBestByVariant({
-        numbers: getBest("numbers"),
-        words: getBest("words"),
-        fruits: getBest("fruits"),
-      });
-      setWordsRecord(getWordsRecord());
-    };
+    const refresh = () => setWordsRecord(getWordsRecord());
     refresh();
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
@@ -236,7 +226,7 @@ export default function Home() {
           <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#fff", mb: 1.25 }}>
             {t.categoriesTitle}
           </Typography>
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1.25 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
             {VARIANTS.map((variant) => (
               <Box
                 key={variant}
@@ -254,37 +244,25 @@ export default function Home() {
                   backgroundColor: "#fff",
                   p: 1.5,
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
-                  gap: 0.5,
+                  gap: 1.5,
                   cursor: "pointer",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                   transition: "transform 0.15s ease, box-shadow 0.15s ease",
                   "&:hover": { transform: "translateY(-2px)", boxShadow: "0 6px 14px rgba(0,0,0,0.16)" },
                 }}
               >
-                <Box sx={{ width: "100%", borderRadius: "8px", overflow: "hidden", backgroundColor: "#f3f3f3", p: 0.5 }}>
+                <Box sx={{ flexShrink: 0, borderRadius: "8px", overflow: "hidden", backgroundColor: "#f3f3f3", p: 0.5 }}>
                   <CategoryPreview variant={variant} />
                 </Box>
-                {/* minHeight en título/descripción: con textos de distinto largo
-                    por idioma, las 3 cards igual quedan a la misma altura. */}
-                <Typography sx={{
-                  fontSize: 13, fontWeight: 800, color: "#222", textAlign: "center",
-                  lineHeight: 1.2, minHeight: "2.4em", display: "flex", alignItems: "center",
-                }}>
-                  {t.categories[variant].label}
-                </Typography>
-                <Typography sx={{
-                  fontSize: 11, color: "#888", textAlign: "center",
-                  lineHeight: 1.3, minHeight: "3.9em",
-                }}>
-                  {t.categories[variant].description}
-                </Typography>
-                <Typography sx={{ fontSize: 11, color: ACCENT, fontWeight: 700, mt: 0.25 }}>
-                  {bestByVariant && bestByVariant[variant] > 0
-                    ? t.bestScoreCaption(bestByVariant[variant])
-                    : t.noScoreYetCaption}
-                </Typography>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 800, color: "#222", lineHeight: 1.2 }}>
+                    {t.categories[variant].label}
+                  </Typography>
+                  <Typography sx={{ fontSize: 12, color: "#888", lineHeight: 1.3, mt: 0.25 }}>
+                    {t.categories[variant].description}
+                  </Typography>
+                </Box>
               </Box>
             ))}
           </Box>

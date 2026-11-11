@@ -1,9 +1,18 @@
-// Guarda la partida en curso de cada variante por separado, para que si
-// el jugador se va y vuelve (o recarga) retome donde estaba, en vez de
-// arrancar una nueva — se borra en cuanto esa partida termina (gameover)
+// Guarda la partida en curso de cada variante POR IDIOMA por separado, para
+// que si el jugador se va y vuelve (o recarga) retome donde estaba, en vez
+// de arrancar una nueva — se borra en cuanto esa partida termina (gameover)
 // o cuando se reinicia manualmente, nunca sobrevive más allá de "perder".
+//
+// El idioma entra en la clave porque "words" depende del diccionario activo
+// (una grilla llena de letras en español no tiene sentido si el jugador
+// cambió a inglés): cambiar de idioma no debe resumir esa partida vieja,
+// tiene que arrancar una nueva en el idioma elegido — la partida en el
+// idioma anterior queda guardada aparte, lista si vuelve a cambiar. Mismo
+// criterio aplicado a números/frutas por consistencia, aunque esas dos no
+// dependan del idioma.
 
 import { ColorGrid, Grid, Piece, Variant } from "../game/types";
+import { SupportedLanguage } from "../i18n/translations";
 import { FoundWordEntry } from "../components/FoundWordsList";
 
 export interface InProgressGame {
@@ -19,21 +28,21 @@ export interface InProgressGame {
   fruitFloor: number;
 }
 
-function keyFor(variant: Variant): string {
-  return `encastralo_inprogress_${variant}`;
+function keyFor(variant: Variant, lang: SupportedLanguage): string {
+  return `encastralo_inprogress_${variant}_${lang}`;
 }
 
-export function saveInProgressGame(variant: Variant, snapshot: InProgressGame): void {
+export function saveInProgressGame(variant: Variant, lang: SupportedLanguage, snapshot: InProgressGame): void {
   try {
-    localStorage.setItem(keyFor(variant), JSON.stringify(snapshot));
+    localStorage.setItem(keyFor(variant, lang), JSON.stringify(snapshot));
   } catch {
     // localStorage lleno o no disponible: no hay nada razonable que hacer.
   }
 }
 
-export function loadInProgressGame(variant: Variant): InProgressGame | null {
+export function loadInProgressGame(variant: Variant, lang: SupportedLanguage): InProgressGame | null {
   try {
-    const raw = localStorage.getItem(keyFor(variant));
+    const raw = localStorage.getItem(keyFor(variant, lang));
     if (!raw) return null;
     return JSON.parse(raw) as InProgressGame;
   } catch {
@@ -41,9 +50,9 @@ export function loadInProgressGame(variant: Variant): InProgressGame | null {
   }
 }
 
-export function clearInProgressGame(variant: Variant): void {
+export function clearInProgressGame(variant: Variant, lang: SupportedLanguage): void {
   try {
-    localStorage.removeItem(keyFor(variant));
+    localStorage.removeItem(keyFor(variant, lang));
   } catch {
     // no-op
   }

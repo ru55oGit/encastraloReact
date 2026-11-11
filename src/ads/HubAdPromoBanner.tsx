@@ -67,13 +67,11 @@ function formatUsdEquivalent(priceArs: number): string {
   return `≈US$${usd.toFixed(2)}`;
 }
 
-// Dominios reales de los 8 juegos (mismo listado que GAMES en
+// Dominios reales de los 9 juegos (mismo listado que GAMES en
 // boludeando-ads/src/pages/CampaignDetail.tsx — emojinalo es el único caso
 // donde el slug interno difiere del dominio en vivo, emojionado.com).
-// NOTA: esta lista es el roster real de dominios del hub (copiada de
-// Letris) — "encastralo.com" todavía no es un sitio publicado, así que NO
-// se agrega acá hasta que esté en vivo; mientras tanto sigue listando a
-// Letris, como en el resto de los repos hermanos.
+// encastralo.com ya está en vivo (Netlify + DNS confirmados 2026-11-11) —
+// se agregó acá y en el mismo lugar de los 8 repos hermanos.
 const GAME_URLS = [
   "viborealo.com",
   "letris.net",
@@ -83,6 +81,7 @@ const GAME_URLS = [
   "tuttifrutalo.com",
   "imaginaloapp.com",
   "emojionado.com",
+  "encastralo.com",
 ];
 
 // Misma paleta de 5 colores del logo BOLUDEANDO (og-image.jpg), ciclando
