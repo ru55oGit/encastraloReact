@@ -1,0 +1,38 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Nunito", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #a34747;
+  min-height: 100vh;
+}
+
+@media (min-width: 900px) {
+  body {
+    background-image: linear-gradient(
+      135deg,
+      #7d6e6e 16.67%,
+      #fff 0,
+      #fff 50%,
+      #7d6e6e 0,
+      #7d6e6e 66.67%,
+      #fff 0,
+      #fff
+    );
+    background-size: 4.24px 4.24px;
+  }
+}
+
+#root {
+  min-height: 100vh;
+}
