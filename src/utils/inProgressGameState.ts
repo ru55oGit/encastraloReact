@@ -26,6 +26,10 @@ export interface InProgressGame {
   foundWords: FoundWordEntry[];
   numberFloor: number;
   fruitFloor: number;
+  // Tiempo restante en ms — se guarda tal cual (no una marca de tiempo
+  // absoluta): irse y volver más tarde no debe descontar el tiempo que
+  // estuvo cerrado, el reloj tiene que quedar pausado mientras tanto.
+  remainingMs: number;
 }
 
 function keyFor(variant: Variant, lang: SupportedLanguage): string {

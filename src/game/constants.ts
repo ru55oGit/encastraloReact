@@ -86,13 +86,51 @@ export const WORD_GOAL_BONUS_PER_LETTER = 100;
 export const NUMBER_GOAL_THRESHOLDS = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
 export const NUMBER_GOAL_BONUS_PER_SUM = 100;
 
-// Metas de la variante "fruits" — mismo modelo que números (ventana
-// deslizante {piso, piso+1}, ver withAllowedLengths en variants/fruits.ts):
-// arranca pidiendo seleccionar 3 frutas iguales, y cada borrado sube el
-// piso en 1, hasta un techo de 15.
-export const MAX_FRUIT_GROUP_SIZE = 15;
+// Metas de la variante "fruits" — igual que palabras, "al menos N" (no un
+// candado sobre la mecánica): arranca pidiendo 3 frutas iguales, y si el
+// primer grupo que formás ya tiene 6, cumplís de una las metas de 4, 5 y 6.
 export const FRUIT_GOAL_THRESHOLDS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 export const FRUIT_GOAL_BONUS_PER_FRUIT = 100;
+
+// --- Reloj (ver game.tsx) ---
+// El juego ahora es contrarreloj: perder dejó de ser "no caben más piezas"
+// (eso en la práctica casi no pasa) y pasó a ser "se acabó el tiempo".
+export const GAME_DURATION_MS = 10 * 60 * 1000; // 10:00 de arranque
+export const REWARDED_TIME_BONUS_MS = 5 * 60 * 1000; // +5:00 por mirar un anuncio en game over
+export const DUPLICATE_WORD_PENALTY_MS = 5 * 1000; // -5s por repetir una palabra ya usada
+
+// Bonus de TIEMPO al cumplir una meta — además del bonus de puntos de
+// arriba. Números y frutas dan un tiempo fijo por meta; palabras escala
+// con el largo (10s para 3 letras, 20s para 4, 30s para 5...) porque una
+// palabra larga cuesta mucho más conseguir que una sum/grupo grande.
+export const NUMBER_GOAL_BONUS_SECONDS = 30;
+export const FRUIT_GOAL_BONUS_SECONDS = 30;
+export function wordGoalBonusSeconds(wordLength: number): number {
+  return (wordLength - 2) * 10;
+}
+
+// Números y frutas NO tienen techo real (a diferencia de palabras, que sí
+// se queda fija en 12 — ver WORD_GOAL_THRESHOLDS): una vez que el piso
+// cruza el último umbral de la tanda actual, la tanda siguiente reemplaza
+// a la anterior en la UI (11-25 -> 26-40 -> 41-55...), pero el piso en sí
+// nunca para de subir (ver numberFloor/fruitFloor en game.tsx). `base` es
+// el primer umbral real (11 para números, 4 para frutas) y `width` cuántos
+// entran por tanda (el largo del array original).
+export function rollingGoalWindow(achieved: number, base: number, width: number): number[] {
+  const cycleStart = base + width * Math.floor(Math.max(0, achieved - base) / width);
+  return Array.from({ length: width }, (_, i) => cycleStart + i);
+}
+
+// Umbrales recién cruzados entre `prevFloor` (exclusive) y `newValue`
+// (inclusive), sin tope — a diferencia de filtrar un array fijo (que deja
+// de dar bonus apenas el piso pasa el último valor del array), esto sigue
+// funcionando para siempre. `floorBase` es el primer umbral que cuenta
+// como "meta" (11/4/3): un valor por debajo de eso nunca es una meta en sí.
+export function crossedThresholds(prevFloor: number, newValue: number, floorBase: number): number[] {
+  const from = Math.max(prevFloor + 1, floorBase);
+  if (newValue < from) return [];
+  return Array.from({ length: newValue - from + 1 }, (_, i) => from + i);
+}
 
 export const HINTS: Record<"numbers" | "words" | "fruits", string> = {
   numbers:

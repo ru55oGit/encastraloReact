@@ -73,6 +73,15 @@ export interface Translation {
   newBestLabel: string;
   playAgainButton: string;
   backToHomeButton: string;
+  // Reloj / pausa / anti-duplicados (ver game.tsx).
+  pauseButtonLabel: string;
+  resumeButtonLabel: string;
+  pausedOverlayTitle: string;
+  duplicateWordMessage: (word: string) => string;
+  continueWithAdButton: string;
+  rewardedAdConfirmButton: string;
+  rewardedAdSkipButton: string;
+  rewardedAdWaitLabel: (seconds: number) => string;
 }
 
 const es: Translation = {
@@ -133,11 +142,19 @@ const es: Translation = {
   numberGoalsComplete: "¡Completaste todas las metas!",
   fruitGoalNext: (count) => `Meta: seleccioná ${count} frutas iguales`,
   fruitGoalsComplete: "¡Completaste todas las metas!",
-  gameOverTitle: "¡No hay más movidas!",
+  gameOverTitle: "¡Se acabó el tiempo!",
   gameOverBody: (score) => `Terminaste con ${score} puntos.`,
   newBestLabel: "¡Nuevo récord!",
   playAgainButton: "Jugar de nuevo",
   backToHomeButton: "Volver al inicio",
+  pauseButtonLabel: "Pausar",
+  resumeButtonLabel: "Reanudar",
+  pausedOverlayTitle: "⏸ Pausado",
+  duplicateWordMessage: (word) => `Ya usaste <b>${word}</b> (-5s)`,
+  continueWithAdButton: "Mirá un anuncio y sumá 5:00",
+  rewardedAdConfirmButton: "Reclamar recompensa",
+  rewardedAdSkipButton: "Cerrar",
+  rewardedAdWaitLabel: (seconds) => `Esperá ${seconds}s...`,
 };
 
 const en: Translation = {
@@ -198,11 +215,19 @@ const en: Translation = {
   numberGoalsComplete: "You completed all the goals!",
   fruitGoalNext: (count) => `Goal: select ${count} matching fruits`,
   fruitGoalsComplete: "You completed all the goals!",
-  gameOverTitle: "No moves left!",
+  gameOverTitle: "Time's up!",
   gameOverBody: (score) => `You finished with ${score} points.`,
   newBestLabel: "New best score!",
   playAgainButton: "Play again",
   backToHomeButton: "Back to home",
+  pauseButtonLabel: "Pause",
+  resumeButtonLabel: "Resume",
+  pausedOverlayTitle: "⏸ Paused",
+  duplicateWordMessage: (word) => `You already used <b>${word}</b> (-5s)`,
+  continueWithAdButton: "Watch an ad and add 5:00",
+  rewardedAdConfirmButton: "Claim reward",
+  rewardedAdSkipButton: "Close",
+  rewardedAdWaitLabel: (seconds) => `Wait ${seconds}s...`,
 };
 
 const pt: Translation = {
@@ -263,11 +288,19 @@ const pt: Translation = {
   numberGoalsComplete: "Você completou todas as metas!",
   fruitGoalNext: (count) => `Meta: selecione ${count} frutas iguais`,
   fruitGoalsComplete: "Você completou todas as metas!",
-  gameOverTitle: "Não há mais jogadas!",
+  gameOverTitle: "O tempo acabou!",
   gameOverBody: (score) => `Você terminou com ${score} pontos.`,
   newBestLabel: "Novo recorde!",
   playAgainButton: "Jogar de novo",
   backToHomeButton: "Voltar ao início",
+  pauseButtonLabel: "Pausar",
+  resumeButtonLabel: "Retomar",
+  pausedOverlayTitle: "⏸ Pausado",
+  duplicateWordMessage: (word) => `Você já usou <b>${word}</b> (-5s)`,
+  continueWithAdButton: "Assista a um anúncio e some 5:00",
+  rewardedAdConfirmButton: "Resgatar recompensa",
+  rewardedAdSkipButton: "Fechar",
+  rewardedAdWaitLabel: (seconds) => `Espere ${seconds}s...`,
 };
 
 export const translations: Record<SupportedLanguage, Translation> = { es, en, pt };
