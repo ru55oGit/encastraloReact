@@ -111,13 +111,17 @@ export function wordGoalBonusSeconds(wordLength: number): number {
 
 // Números y frutas NO tienen techo real (a diferencia de palabras, que sí
 // se queda fija en 12 — ver WORD_GOAL_THRESHOLDS): una vez que el piso
-// cruza el último umbral de la tanda actual, la tanda siguiente reemplaza
+// LLEGA al último umbral de la tanda actual, la tanda siguiente reemplaza
 // a la anterior en la UI (11-25 -> 26-40 -> 41-55...), pero el piso en sí
-// nunca para de subir (ver numberFloor/fruitFloor en game.tsx). `base` es
-// el primer umbral real (11 para números, 4 para frutas) y `width` cuántos
-// entran por tanda (el largo del array original).
+// nunca para de subir (ver numberFloor/fruitFloor en game.tsx). La rotación
+// pasa ni bien `achieved` toca el tope de la tanda (no recién al superarlo):
+// si no, hay un instante en que la tanda entera queda marcada como
+// cumplida y la card no muestra qué número hay que sumar a continuación.
+// `base` es el primer umbral real (11 para números, 4 para frutas) y
+// `width` cuántos entran por tanda (el largo del array original).
 export function rollingGoalWindow(achieved: number, base: number, width: number): number[] {
-  const cycleStart = base + width * Math.floor(Math.max(0, achieved - base) / width);
+  const cyclesPassed = Math.max(0, Math.floor((achieved - base - width + 1) / width) + 1);
+  const cycleStart = base + cyclesPassed * width;
   return Array.from({ length: width }, (_, i) => cycleStart + i);
 }
 

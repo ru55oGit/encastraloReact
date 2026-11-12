@@ -127,6 +127,11 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // "+Xs" centrado cuando se cumple una meta — sin esto el bonus de tiempo
+  // pasaba desapercibido (solo se notaba mirando fijo el reloj).
+  const [timeBonusMsg, setTimeBonusMsg] = useState<string | null>(null);
+  const timeBonusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Solo la variante "words" acumula este historial (ver FoundWordsList) —
   // también es la base del chequeo anti-duplicados.
   const [foundWords, setFoundWords] = useState<FoundWordEntry[]>(() => savedGame?.foundWords ?? []);
@@ -245,6 +250,12 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
     errorTimeoutRef.current = setTimeout(() => setErrorMsg(null), 1300);
   }
 
+  function showTimeBonus(seconds: number) {
+    setTimeBonusMsg(`+${seconds}s`);
+    if (timeBonusTimeoutRef.current) clearTimeout(timeBonusTimeoutRef.current);
+    timeBonusTimeoutRef.current = setTimeout(() => setTimeBonusMsg(null), 1100);
+  }
+
   const handleResolved = useCallback(
     (path: Path, valid: boolean, points: number, reason?: string) => {
       if (!valid) {
@@ -280,7 +291,10 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
           const newlyCrossed = WORD_GOAL_THRESHOLDS.filter((th) => prevLongest < th && word.length >= th);
           const pointBonus = newlyCrossed.reduce((sum, th) => sum + th * WORD_GOAL_BONUS_PER_LETTER, 0);
           const timeBonusSec = newlyCrossed.reduce((sum, th) => sum + wordGoalBonusSeconds(th), 0);
-          if (timeBonusSec > 0) setRemainingMs((prev) => prev + timeBonusSec * 1000);
+          if (timeBonusSec > 0) {
+            setRemainingMs((prev) => prev + timeBonusSec * 1000);
+            showTimeBonus(timeBonusSec);
+          }
           clearPath(path, points + pointBonus);
           return;
         }
@@ -300,7 +314,10 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
           const newlyCrossed = crossedThresholds(numberFloor, sum, NUMBER_GOAL_THRESHOLDS[0]);
           const pointBonus = newlyCrossed.reduce((acc, v) => acc + v * NUMBER_GOAL_BONUS_PER_SUM, 0);
           const timeBonusSec = newlyCrossed.length * NUMBER_GOAL_BONUS_SECONDS;
-          if (timeBonusSec > 0) setRemainingMs((prev) => prev + timeBonusSec * 1000);
+          if (timeBonusSec > 0) {
+            setRemainingMs((prev) => prev + timeBonusSec * 1000);
+            showTimeBonus(timeBonusSec);
+          }
           setNumberFloor((prev) => prev + 1);
           clearPath(path, points + pointBonus);
           return;
@@ -317,7 +334,10 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
           const newlyCrossed = crossedThresholds(fruitFloor, count, FRUIT_GOAL_THRESHOLDS[0]);
           const pointBonus = newlyCrossed.reduce((acc, v) => acc + v * FRUIT_GOAL_BONUS_PER_FRUIT, 0);
           const timeBonusSec = newlyCrossed.length * FRUIT_GOAL_BONUS_SECONDS;
-          if (timeBonusSec > 0) setRemainingMs((prev) => prev + timeBonusSec * 1000);
+          if (timeBonusSec > 0) {
+            setRemainingMs((prev) => prev + timeBonusSec * 1000);
+            showTimeBonus(timeBonusSec);
+          }
           setFruitFloor((prev) => Math.max(prev, count));
           clearPath(path, points + pointBonus);
           return;
@@ -515,6 +535,27 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
                 // propio, no de usuarios.
                 dangerouslySetInnerHTML={{ __html: errorMsg }}
               />
+            </Box>
+          )}
+
+          {timeBonusMsg && (
+            <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2, px: 2, pointerEvents: "none" }}>
+              <Typography sx={{
+                color: "#fff", backgroundColor: "#2ecc71", px: 2.5, py: 1.2, borderRadius: 999,
+                fontSize: 28, fontWeight: 800, fontFamily: "monospace", textAlign: "center",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.35)",
+                animation: "encastralo-bonus-pop 1.1s ease-out forwards",
+                "@keyframes encastralo-bonus-pop": {
+                  "0%": { transform: "scale(0.6) translateY(10px)", opacity: 0 },
+                  "15%": { transform: "scale(1.15) translateY(0)", opacity: 1 },
+                  "30%": { transform: "scale(1) translateY(0)", opacity: 1 },
+                  "80%": { transform: "scale(1) translateY(-6px)", opacity: 1 },
+                  "100%": { transform: "scale(1) translateY(-18px)", opacity: 0 },
+                },
+                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+              }}>
+                {timeBonusMsg}
+              </Typography>
             </Box>
           )}
 
