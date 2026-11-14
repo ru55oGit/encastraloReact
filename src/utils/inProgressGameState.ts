@@ -26,6 +26,11 @@ export interface InProgressGame {
   foundWords: FoundWordEntry[];
   numberFloor: number;
   fruitFloor: number;
+  // Cantidad de grupos de frutas borrados en la partida — a diferencia de
+  // numberFloor (que sube de a uno por acierto, así que los aciertos de
+  // números salen de restarle el piso inicial), fruitFloor solo guarda el
+  // grupo más grande ("al menos N"), no cuántas veces se borró algo.
+  fruitClearsCount: number;
   // Tiempo restante en ms — se guarda tal cual (no una marca de tiempo
   // absoluta): irse y volver más tarde no debe descontar el tiempo que
   // estuvo cerrado, el reloj tiene que quedar pausado mientras tanto.

@@ -80,9 +80,11 @@ export const WORD_GOAL_BONUS_PER_LETTER = 100;
 // es "cualquier suma dentro del rango sirve": el juego arranca pidiendo
 // sumar 10, y la ventana de sumas habilitadas es siempre {piso, piso+1}
 // (ver withAllowedSums en variants/numbers.ts) — se puede sumar la
-// "actual" o ya ir por la siguiente, pero ninguna otra. Cada vez que se
-// borra algo (sea cual sea de las dos), el piso sube en 1, así que el
-// próximo turno exige una suma más alta. 25 es el techo.
+// "actual" o ya ir por la siguiente, pero ninguna otra. Solo sumar
+// exactamente piso+1 avanza la meta (y da bonus); sumar el piso de nuevo
+// es una jugada válida (para no trabarse si el tablero no da para la
+// siguiente) pero no cuenta como meta cumplida — ver handleResolved en
+// game.tsx.
 export const NUMBER_GOAL_THRESHOLDS = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
 export const NUMBER_GOAL_BONUS_PER_SUM = 100;
 

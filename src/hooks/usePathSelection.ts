@@ -1,5 +1,6 @@
 import { RefObject, useCallback, useRef, useState } from "react";
 import { stepPath } from "../game/pathBuilder";
+import { DRAG_LIFT_PX } from "../game/constants";
 import { Grid, GridPos, Path, PathEvaluation, VariantEngine } from "../game/types";
 import { BoardMetrics, cellAtPoint, getBoardMetrics } from "../utils/boardMetrics";
 
@@ -33,8 +34,12 @@ export function usePathSelection({ boardRef, grid, engine, isDraggingPiece, onRe
   const engineRef = useRef(engine);
   engineRef.current = engine;
 
-  const updateBadge = useCallback((currentPath: GridPos[], x: number, y: number) => {
-    setBadge({ x, y, evaluation: engineRef.current.evaluateLivePath(gridRef.current, currentPath) });
+  // En touch, el dedo tapa el popup si se dibuja justo donde se apoya —
+  // mismo lift que usePieceDrag usa para la pieza arrastrada (más alto en
+  // touch que en mouse, porque el dedo es más ancho que un cursor).
+  const updateBadge = useCallback((currentPath: GridPos[], x: number, y: number, pointerType: string) => {
+    const lift = pointerType === "mouse" ? DRAG_LIFT_PX.mouse : DRAG_LIFT_PX.touch;
+    setBadge({ x, y: y - lift, evaluation: engineRef.current.evaluateLivePath(gridRef.current, currentPath) });
   }, []);
 
   const handlePointerMove = useCallback(
@@ -47,7 +52,7 @@ export function usePathSelection({ boardRef, grid, engine, isDraggingPiece, onRe
       const nextPath = hit ? stepPath(currentPath, hit, gridRef.current) : currentPath;
       pathRef.current = nextPath;
       setPath(nextPath);
-      updateBadge(nextPath, e.clientX, e.clientY);
+      updateBadge(nextPath, e.clientX, e.clientY, e.pointerType);
     },
     [updateBadge],
   );
@@ -84,7 +89,7 @@ export function usePathSelection({ boardRef, grid, engine, isDraggingPiece, onRe
       metricsRef.current = metrics;
       pathRef.current = [hit];
       setPath([hit]);
-      updateBadge([hit], e.clientX, e.clientY);
+      updateBadge([hit], e.clientX, e.clientY, e.pointerType);
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("pointercancel", handlePointerUp);

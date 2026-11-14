@@ -29,6 +29,10 @@ export interface Translation {
   // con esos datos (ver utils/wordsRecordState.ts).
   recordWordsCaption: (n: number) => string;
   recordLongestWordCaption: (word: string) => string;
+  recordNumberGoalCaption: (goal: number) => string;
+  recordNumberClearsCaption: (n: number) => string;
+  recordFruitGroupCaption: (n: number) => string;
+  recordFruitClearsCaption: (n: number) => string;
   shareRecordText: (score: number) => string;
   removeAdsButton: string;
   removeAdsButtonBuying: string;
@@ -103,6 +107,10 @@ const es: Translation = {
   recordScoreCaption: (score) => `${score} puntos`,
   recordWordsCaption: (n) => `Más palabras en una partida: ${n}`,
   recordLongestWordCaption: (word) => `Palabra más larga: ${word} (${word.length} letras)`,
+  recordNumberGoalCaption: (goal) => `Llegaste a sumar ${goal}`,
+  recordNumberClearsCaption: (n) => `Sumaste ${n} veces en esa partida`,
+  recordFruitGroupCaption: (n) => `Juntaste ${n} frutas de una vez`,
+  recordFruitClearsCaption: (n) => `Armaste ${n} grupos en esa partida`,
   shareRecordText: (score) => `¡Mi récord en Encastralo es de ${score} puntos! ¿Podés superarlo? 🧩`,
   removeAdsButton: "Sacar los anuncios",
   removeAdsButtonBuying: "Redirigiendo a MercadoPago...",
@@ -122,9 +130,9 @@ const es: Translation = {
 
   categoriesTitle: "Formas de jugar",
   categories: {
-    numbers: { label: "Sumar 10", description: "Empezá sumando 10: cada acierto sube la meta y te suma tiempo." },
+    numbers: { label: "Sumando números...", description: "Sumá 10, 11, 12, 13, 14, 15... cada acierto sube la meta y te suma tiempo." },
     words: { label: "Formar palabras", description: "Recorré letras contiguas y armá una palabra válida." },
-    fruits: { label: "Frutas", description: "Juntá 3 o más frutas iguales conectadas." },
+    fruits: { label: "Mandale Fruta", description: "Juntá 3 o más frutas iguales conectadas." },
   },
   bestScoreCaption: (score) => `Mejor: ${score}`,
   noScoreYetCaption: "Sin jugar",
@@ -176,6 +184,10 @@ const en: Translation = {
   recordScoreCaption: (score) => `${score} points`,
   recordWordsCaption: (n) => `Most words in one game: ${n}`,
   recordLongestWordCaption: (word) => `Longest word: ${word} (${word.length} letters)`,
+  recordNumberGoalCaption: (goal) => `You reached a sum of ${goal}`,
+  recordNumberClearsCaption: (n) => `You summed ${n} times in that game`,
+  recordFruitGroupCaption: (n) => `You matched ${n} fruits at once`,
+  recordFruitClearsCaption: (n) => `You cleared ${n} groups in that game`,
   shareRecordText: (score) => `My Encastralo record is ${score} points! Can you beat it? 🧩`,
   removeAdsButton: "Remove ads",
   removeAdsButtonBuying: "Redirecting to MercadoPago...",
@@ -195,9 +207,9 @@ const en: Translation = {
 
   categoriesTitle: "Ways to play",
   categories: {
-    numbers: { label: "Sum to 10", description: "Start by summing 10: each clear raises the goal and adds time." },
+    numbers: { label: "Summing numbers...", description: "Sum 10, 11, 12, 13, 14, 15... every clear raises the goal and adds time." },
     words: { label: "Spell words", description: "Trace connected letters to spell a valid word." },
-    fruits: { label: "Fruits", description: "Match 3 or more connected cells of the same fruit." },
+    fruits: { label: "Fruit Rush", description: "Match 3 or more connected cells of the same fruit." },
   },
   bestScoreCaption: (score) => `Best: ${score}`,
   noScoreYetCaption: "Not played yet",
@@ -249,6 +261,10 @@ const pt: Translation = {
   recordScoreCaption: (score) => `${score} pontos`,
   recordWordsCaption: (n) => `Mais palavras em uma partida: ${n}`,
   recordLongestWordCaption: (word) => `Palavra mais longa: ${word} (${word.length} letras)`,
+  recordNumberGoalCaption: (goal) => `Você chegou a somar ${goal}`,
+  recordNumberClearsCaption: (n) => `Você somou ${n} vezes nessa partida`,
+  recordFruitGroupCaption: (n) => `Você juntou ${n} frutas de uma vez`,
+  recordFruitClearsCaption: (n) => `Você formou ${n} grupos nessa partida`,
   shareRecordText: (score) => `Meu recorde no Encastralo é de ${score} pontos! Consegue superar? 🧩`,
   removeAdsButton: "Remover anúncios",
   removeAdsButtonBuying: "Redirecionando para o MercadoPago...",
@@ -268,9 +284,9 @@ const pt: Translation = {
 
   categoriesTitle: "Formas de jogar",
   categories: {
-    numbers: { label: "Somar 10", description: "Comece somando 10: cada acerto sobe a meta e soma tempo." },
+    numbers: { label: "Somando números...", description: "Some 10, 11, 12, 13, 14, 15... cada acerto sobe a meta e soma tempo." },
     words: { label: "Formar palavras", description: "Percorra letras conectadas e forme uma palavra válida." },
-    fruits: { label: "Frutas", description: "Junte 3 ou mais frutas iguais conectadas." },
+    fruits: { label: "Modo Fruta", description: "Junte 3 ou mais frutas iguais conectadas." },
   },
   bestScoreCaption: (score) => `Melhor: ${score}`,
   noScoreYetCaption: "Ainda não jogou",

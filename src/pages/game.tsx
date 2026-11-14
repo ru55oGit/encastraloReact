@@ -44,6 +44,7 @@ import { useLanguage } from "../i18n/LanguageContext";
 import { track } from "../lib/analytics";
 import { recordLastPlayed } from "../utils/lastPlayedState";
 import { maybeSaveWordsRecord } from "../utils/wordsRecordState";
+import { maybeSaveVariantRecord } from "../utils/variantRecordState";
 import { playErrorSound, playSuccessSound } from "../utils/sound";
 import { clearInProgressGame, InProgressGame, loadInProgressGame, saveInProgressGame } from "../utils/inProgressGameState";
 
@@ -149,6 +150,11 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
   // se puede borrar siempre — mismo criterio que palabras ("al menos N").
   // Tampoco tiene techo.
   const [fruitFloor, setFruitFloor] = useState(() => savedGame?.fruitFloor ?? 0);
+  // Cuántos grupos de frutas se borraron en total esta partida — fruitFloor
+  // solo guarda el grupo más grande ("al menos N"), no cuántas veces se
+  // borró algo, así que hace falta este contador aparte para la card de
+  // récord del Home (ver variantRecordState.ts).
+  const [fruitClearsCount, setFruitClearsCount] = useState(() => savedGame?.fruitClearsCount ?? 0);
 
   const activeEngine = useMemo(() => {
     if (variant === "numbers") return withAllowedSums(numberWindow);
@@ -201,6 +207,7 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
       foundWords,
       numberFloor,
       fruitFloor,
+      fruitClearsCount,
       remainingMs,
     });
   }, [
@@ -213,6 +220,7 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
     foundWords,
     numberFloor,
     fruitFloor,
+    fruitClearsCount,
     remainingMs,
     currentLanguage,
   ]);
@@ -235,10 +243,16 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
       const durationSec = Math.round((Date.now() - gameStartedAtRef.current) / 1000);
       track("game_over", { variant: state.variant, score: state.score, duration_sec: durationSec });
       // La card de "Récord" del Home (ver Home.tsx) muestra la MEJOR
-      // partida de palabras completa (puntaje + palabras encontradas +
-      // más larga), no solo el número que ya guarda storage.ts.
+      // partida completa de cada variante, no solo el número que ya
+      // guarda storage.ts: en palabras, el puntaje + palabras encontradas
+      // + más larga; en números/frutas, el puntaje + la meta más alta /
+      // grupo más grande + cuántas veces se borró algo esa partida.
       if (state.variant === "words") {
         maybeSaveWordsRecord(state.score, foundWords.map((entry) => entry.word));
+      } else if (state.variant === "numbers") {
+        maybeSaveVariantRecord("numbers", state.score, numberFloor, Math.max(0, numberFloor - MIN_TARGET_SUM));
+      } else if (state.variant === "fruits") {
+        maybeSaveVariantRecord("fruits", state.score, fruitFloor, fruitClearsCount);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -290,7 +304,11 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
           const prevLongest = foundWords.reduce((max, entry) => Math.max(max, entry.word.length), 0);
           const newlyCrossed = WORD_GOAL_THRESHOLDS.filter((th) => prevLongest < th && word.length >= th);
           const pointBonus = newlyCrossed.reduce((sum, th) => sum + th * WORD_GOAL_BONUS_PER_LETTER, 0);
-          const timeBonusSec = newlyCrossed.reduce((sum, th) => sum + wordGoalBonusSeconds(th), 0);
+          const goalTimeBonusSec = newlyCrossed.reduce((sum, th) => sum + wordGoalBonusSeconds(th), 0);
+          // Además del bonus de metas: TODA palabra válida suma tiempo
+          // según su propio largo (ARO = 3 letras = +3s), cruce o no una
+          // meta nueva — se suman los dos en un solo popup.
+          const timeBonusSec = goalTimeBonusSec + word.length;
           if (timeBonusSec > 0) {
             setRemainingMs((prev) => prev + timeBonusSec * 1000);
             showTimeBonus(timeBonusSec);
@@ -309,16 +327,21 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
         const result = activeEngine.resolvePath(state.grid, path);
         const sum = result.successLabel ? Number(result.successLabel) : null;
         if (sum !== null) {
-          // Como la ventana activa es siempre {piso, piso+1}, esta suma
-          // solo puede cruzar como mucho UN umbral nuevo.
-          const newlyCrossed = crossedThresholds(numberFloor, sum, NUMBER_GOAL_THRESHOLDS[0]);
+          // La ventana activa es {piso, piso+1}: sumar el piso (el valor
+          // "de repuesto", ya cumplido antes) es una jugada válida para no
+          // trabarse si el tablero no da para sumar el siguiente — pero
+          // NO debe contar como meta cumplida. Solo sumar exactamente
+          // piso+1 avanza la meta; si no, sumar 14 de nuevo con el piso en
+          // 14 marcaba la meta 15 como cumplida sin haberla sumado.
+          const isNewGoal = sum === numberFloor + 1;
+          const newlyCrossed = isNewGoal ? crossedThresholds(numberFloor, sum, NUMBER_GOAL_THRESHOLDS[0]) : [];
           const pointBonus = newlyCrossed.reduce((acc, v) => acc + v * NUMBER_GOAL_BONUS_PER_SUM, 0);
           const timeBonusSec = newlyCrossed.length * NUMBER_GOAL_BONUS_SECONDS;
           if (timeBonusSec > 0) {
             setRemainingMs((prev) => prev + timeBonusSec * 1000);
             showTimeBonus(timeBonusSec);
           }
-          setNumberFloor((prev) => prev + 1);
+          if (isNewGoal) setNumberFloor((prev) => prev + 1);
           clearPath(path, points + pointBonus);
           return;
         }
@@ -333,12 +356,17 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
           // metas de 4, 5 y 6.
           const newlyCrossed = crossedThresholds(fruitFloor, count, FRUIT_GOAL_THRESHOLDS[0]);
           const pointBonus = newlyCrossed.reduce((acc, v) => acc + v * FRUIT_GOAL_BONUS_PER_FRUIT, 0);
-          const timeBonusSec = newlyCrossed.length * FRUIT_GOAL_BONUS_SECONDS;
+          const goalTimeBonusSec = newlyCrossed.length * FRUIT_GOAL_BONUS_SECONDS;
+          // Además del bonus de metas: TODO grupo borrado suma tiempo
+          // según su propio tamaño (4 frutas = +4s), cruce o no una meta
+          // nueva — se suman los dos en un solo popup.
+          const timeBonusSec = goalTimeBonusSec + count;
           if (timeBonusSec > 0) {
             setRemainingMs((prev) => prev + timeBonusSec * 1000);
             showTimeBonus(timeBonusSec);
           }
           setFruitFloor((prev) => Math.max(prev, count));
+          setFruitClearsCount((prev) => prev + 1);
           clearPath(path, points + pointBonus);
           return;
         }
@@ -392,6 +420,7 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
     setFoundWords([]);
     setNumberFloor(MIN_TARGET_SUM);
     setFruitFloor(0);
+    setFruitClearsCount(0);
     setRemainingMs(GAME_DURATION_MS);
     setPaused(false);
     restart();
