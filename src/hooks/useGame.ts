@@ -19,7 +19,11 @@ export interface ResumeSnapshot {
   score: number;
 }
 
-function initGameState(variant: Variant, engine: VariantEngine, resumeFrom?: ResumeSnapshot): GameState {
+// `bestScope` solo lo usa "words" (el idioma actual, ver game.tsx) — el
+// diccionario cambia por completo entre es/en/pt, así que el mejor
+// puntaje de una partida en español no corresponde compararlo ni
+// mostrarlo jugando en inglés. Números y frutas pasan undefined.
+function initGameState(variant: Variant, engine: VariantEngine, resumeFrom?: ResumeSnapshot, bestScope?: string): GameState {
   if (resumeFrom) {
     return {
       variant,
@@ -27,7 +31,7 @@ function initGameState(variant: Variant, engine: VariantEngine, resumeFrom?: Res
       colorGrid: resumeFrom.colorGrid,
       tray: resumeFrom.tray,
       score: resumeFrom.score,
-      best: getBest(variant),
+      best: getBest(variant, bestScope),
       phase: "playing",
     };
   }
@@ -37,7 +41,7 @@ function initGameState(variant: Variant, engine: VariantEngine, resumeFrom?: Res
     colorGrid: createEmptyColorGrid(),
     tray: freshTray(engine),
     score: 0,
-    best: getBest(variant),
+    best: getBest(variant, bestScope),
     phase: "playing",
   };
 }
@@ -45,7 +49,7 @@ function initGameState(variant: Variant, engine: VariantEngine, resumeFrom?: Res
 // Se corre después de cualquier movimiento que cambia el tablero (poner
 // una pieza, o borrar un camino): guarda récord si corresponde, rellena la
 // bandeja si las 3 piezas ya se usaron, y decide si el juego terminó.
-function finishMove(state: GameState, engine: VariantEngine): GameState {
+function finishMove(state: GameState, engine: VariantEngine, bestScope?: string): GameState {
   let tray = state.tray;
   if (tray.every((piece) => piece === null)) {
     tray = freshTray(engine);
@@ -54,7 +58,7 @@ function finishMove(state: GameState, engine: VariantEngine): GameState {
   let best = state.best;
   if (state.score > best) {
     best = state.score;
-    setBest(state.variant, best);
+    setBest(state.variant, best, bestScope);
   }
 
   const noPieceFits = tray.every((piece) => piece === null || !fitsAnywhere(state.grid, piece));
@@ -64,7 +68,7 @@ function finishMove(state: GameState, engine: VariantEngine): GameState {
   return { ...state, tray, best, phase };
 }
 
-function reducer(state: GameState, action: GameAction, engine: VariantEngine): GameState {
+function reducer(state: GameState, action: GameAction, engine: VariantEngine, bestScope?: string): GameState {
   switch (action.type) {
     case "PLACE_PIECE": {
       if (state.phase !== "playing") return state;
@@ -74,7 +78,7 @@ function reducer(state: GameState, action: GameAction, engine: VariantEngine): G
       const tray = [...state.tray];
       tray[action.trayIndex] = null;
       const score = state.score + piece.cells.length;
-      return finishMove({ ...state, grid, colorGrid, tray, score }, engine);
+      return finishMove({ ...state, grid, colorGrid, tray, score }, engine, bestScope);
     }
 
     case "ROTATE_PIECE": {
@@ -90,11 +94,11 @@ function reducer(state: GameState, action: GameAction, engine: VariantEngine): G
       if (state.phase !== "playing") return state;
       const { grid, colorGrid } = clearCells(state.grid, state.colorGrid, action.path);
       const score = state.score + action.points;
-      return finishMove({ ...state, grid, colorGrid, score }, engine);
+      return finishMove({ ...state, grid, colorGrid, score }, engine, bestScope);
     }
 
     case "RESTART":
-      return initGameState(state.variant, engine);
+      return initGameState(state.variant, engine, undefined, bestScope);
 
     default:
       return state;
@@ -106,11 +110,11 @@ function reducer(state: GameState, action: GameAction, engine: VariantEngine): G
 // cargó su diccionario vía import() dinámico, solo lo usa. `resumeFrom`
 // (si viene) solo se usa para el estado INICIAL — un RESTART posterior
 // siempre arranca una partida 100% nueva, nunca vuelve a resumir.
-export function useGame(variant: Variant, engine: VariantEngine, resumeFrom?: ResumeSnapshot) {
+export function useGame(variant: Variant, engine: VariantEngine, resumeFrom?: ResumeSnapshot, bestScope?: string) {
   const [state, dispatch] = useReducer(
-    (s: GameState, action: GameAction) => reducer(s, action, engine),
+    (s: GameState, action: GameAction) => reducer(s, action, engine, bestScope),
     variant,
-    (v) => initGameState(v, engine, resumeFrom),
+    (v) => initGameState(v, engine, resumeFrom, bestScope),
   );
 
   const placePiece = useCallback((trayIndex: number, at: GridPos) => {

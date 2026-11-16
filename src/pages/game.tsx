@@ -162,7 +162,10 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variant, engine, numberFloor]);
 
-  const { state, placePiece, rotateTrayPiece, clearPath, restart } = useGame(variant, activeEngine, savedGame ?? undefined);
+  // "words" guarda el mejor puntaje por idioma (el diccionario cambia por
+  // completo entre es/en/pt) — números/frutas no dependen del idioma.
+  const bestScope = variant === "words" ? currentLanguage : undefined;
+  const { state, placePiece, rotateTrayPiece, clearPath, restart } = useGame(variant, activeEngine, savedGame ?? undefined, bestScope);
 
   // --- Reloj ---
   // Perder ya no es "no entra ninguna pieza" (eso en la práctica casi no
@@ -248,7 +251,7 @@ function GamePlaying({ variant, engine, savedGame }: GamePlayingProps) {
       // + más larga; en números/frutas, el puntaje + la meta más alta /
       // grupo más grande + cuántas veces se borró algo esa partida.
       if (state.variant === "words") {
-        maybeSaveWordsRecord(state.score, foundWords.map((entry) => entry.word));
+        maybeSaveWordsRecord(state.score, foundWords.map((entry) => entry.word), currentLanguage);
       } else if (state.variant === "numbers") {
         maybeSaveVariantRecord("numbers", state.score, numberFloor, Math.max(0, numberFloor - MIN_TARGET_SUM));
       } else if (state.variant === "fruits") {

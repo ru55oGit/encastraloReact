@@ -85,14 +85,17 @@ export default function Home() {
 
   useEffect(() => {
     const refresh = () => {
-      setWordsRecord(getWordsRecord());
+      // Por idioma (el diccionario de "words" cambia por completo entre
+      // es/en/pt) — hay que releerlo también al cambiar de idioma, no
+      // solo al volver a enfocar la pestaña.
+      setWordsRecord(getWordsRecord(currentLanguage));
       setNumbersRecord(getVariantRecord("numbers"));
       setFruitsRecord(getVariantRecord("fruits"));
     };
     refresh();
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
-  }, []);
+  }, [currentLanguage]);
 
   const [sharingRecord, setSharingRecord] = useState(false);
   const canShareRecord = typeof navigator !== "undefined" && typeof navigator.share === "function";
